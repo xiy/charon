@@ -25,6 +25,7 @@ func NewService(name string, prefix string, url *url.URL, connectionTimeout time
 	proxy.Director = func(req *http.Request) {
 		defaultDirector(req)
 		req.Host = url.Host
+		req.URL.RawQuery = url.RawQuery
 	}
 
 	service := &Service{

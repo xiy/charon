@@ -2,50 +2,47 @@ package proxy
 
 import (
 	"charon/logging"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/go-kit/kit/log"
 )
 
 type serviceTransport struct {
 	transport *http.Transport
-	logger    log.Logger
+	logger    *log.Logger
 }
 
 func newServiceTransport(connectionTimeout time.Duration) (t *serviceTransport) {
 	t = &serviceTransport{
-		transport: &http.Transport{},
-		logger:    logging.NewStdoutLogger(),
+		logger: logging.NewCoLogLogger(),
 	}
 
-	t.transport.Dial = func(network, address string) (net.Conn, error) {
-		return net.DialTimeout(network, address, connectionTimeout)
+	t.transport = &http.Transport{
+		DisableKeepAlives:     true,
+		MaxIdleConnsPerHost:   100000,
+		DisableCompression:    true,
+		ResponseHeaderTimeout: 30 * time.Second,
+		Dial: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).Dial,
 	}
-
-	t.transport.MaxIdleConnsPerHost = 20
-	t.transport.ResponseHeaderTimeout = 30 * time.Second
 
 	return
 }
 
 func (st *serviceTransport) RoundTrip(req *http.Request) (resp *http.Response, err error) {
 	resp, err = st.transport.RoundTrip(req)
+
+	log.Printf("info: %s", req.URL.Query().Encode())
+
 	if err == nil {
 		setViaHeader(req)
 	}
-
-	headers, err := json.Marshal(resp.Header)
-	if err != nil {
-		st.logger.Log("error", err)
-	}
-
-	st.logger.Log("headers", headers, "status", resp.StatusCode)
 
 	return
 }

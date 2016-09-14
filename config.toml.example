@@ -1,0 +1,10 @@
+port = 9000
+service_timeout = 30s
+
+# A service definition looks like this:
+#
+# [services]
+#   [services.backend]
+#     address = "http://backend-service.foo.io:8090"
+#     prefix = "/backend/*"
+#

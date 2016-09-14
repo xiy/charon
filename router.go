@@ -1,15 +1,13 @@
 package main
 
 import (
-	"charon/logging"
 	"charon/proxy"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
-
-	"github.com/go-kit/kit/log"
 
 	"github.com/husobee/vestigo"
 )
@@ -20,35 +18,36 @@ type Router struct {
 	Muxer          *vestigo.Router
 	ServiceTimeout time.Duration
 	Services       map[string]*proxy.Service
-	Logger         log.Logger
+	Logger         *log.Logger
 }
 
 // NewRouter creates and returns a new instance of Router with a defined
 // timeout for non-responding services.
-func NewRouter(serviceTimeout time.Duration, allowTrace bool) (r *Router) {
-	vestigo.AllowTrace = allowTrace
+func NewRouter(serviceTimeout time.Duration, logger *log.Logger) (r *Router) {
 
 	return &Router{
 		Muxer:          vestigo.NewRouter(),
 		ServiceTimeout: serviceTimeout,
 		Services:       make(map[string]*proxy.Service),
-		Logger:         logging.NewStdoutLogger(),
+		Logger:         logger,
 	}
 }
 
 // ServeHTTP delegates calls to the underlying muxer of the Router instance.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	r.Logger.Log("method", req.Method, "path", req.URL.Path, "user_agent", req.UserAgent())
+	r.Logger.Printf("info: method=%s path=%s user_agent=%s", req.Method, req.URL.Path+req.URL.RawQuery, req.UserAgent())
 	r.Muxer.ServeHTTP(w, req)
 }
 
-// AddService creates a new instance of a Servicewith a given URL and
+// AddService creates a new instance of a Service with a given URL and
 // routing prefix and attaches it to the router.
 func (r *Router) AddService(name, uri, prefix string) *proxy.Service {
-	var (
-		serviceURL, _ = url.Parse(uri)
-		service       = proxy.NewService(name, prefix, serviceURL, r.ServiceTimeout)
-	)
+	serviceURL, err := url.Parse(uri)
+	if err != nil {
+		log.Fatalf("error: couldn't parse service addres for service `%s`", name)
+	}
+
+	service := proxy.NewService(name, prefix, serviceURL, r.ServiceTimeout)
 
 	// Create a path-prefix route in the muxer, handled by a
 	// reverse proxy handeler. This means any request to the
@@ -65,6 +64,5 @@ func (r *Router) GetServices() {
 	for _, v := range r.Services {
 		enc := json.NewEncoder(os.Stdout)
 		enc.Encode(v)
-		// info("Service Definition: Name=%s URL=%s", v.Name, v.URL)
 	}
 }
