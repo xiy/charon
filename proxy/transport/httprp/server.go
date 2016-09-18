@@ -1,3 +1,7 @@
+// Package httrp is a modified version of the reverse proxy transport written
+// for the Go-Kit project: https://github.com/go-kit/kit/blob/master/transport/httprp/server.go
+//
+// This version has been modified to use a custom http.Transport object.
 package httprp
 
 import (
