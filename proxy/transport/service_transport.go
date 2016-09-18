@@ -1,4 +1,4 @@
-package proxy
+package transport
 
 import (
 	"charon/logging"
@@ -11,13 +11,15 @@ import (
 	"time"
 )
 
-type serviceTransport struct {
+// ServiceTransport wraps an http.Transport, also attached a logger.
+type ServiceTransport struct {
 	transport *http.Transport
 	logger    *log.Logger
 }
 
-func newServiceTransport(connectionTimeout time.Duration) (t *serviceTransport) {
-	t = &serviceTransport{
+// NewServiceTransport creates a new custom HTTP transport for use with an HTTP handler.
+func NewServiceTransport(connectionTimeout time.Duration) (t *ServiceTransport) {
+	t = &ServiceTransport{
 		logger: logging.NewCoLogLogger(),
 	}
 
@@ -35,7 +37,8 @@ func newServiceTransport(connectionTimeout time.Duration) (t *serviceTransport) 
 	return
 }
 
-func (st *serviceTransport) RoundTrip(req *http.Request) (resp *http.Response, err error) {
+// RoundTrip wraps the underlying transport.RoundTrip function, adding logging and custom headers.
+func (st *ServiceTransport) RoundTrip(req *http.Request) (resp *http.Response, err error) {
 	resp, err = st.transport.RoundTrip(req)
 
 	log.Printf("info: %s", req.URL.Query().Encode())

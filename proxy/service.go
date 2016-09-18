@@ -1,10 +1,12 @@
 package proxy
 
 import (
+	"charon/proxy/transport/httprp"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"time"
+
+	"golang.org/x/net/context"
 )
 
 // Service represents a unique backend service behind the gateway.
@@ -18,15 +20,8 @@ type Service struct {
 // NewService creates and returns a new Service instance with the given name,
 // routing prefix and URL.
 func NewService(name string, prefix string, url *url.URL, connectionTimeout time.Duration) (s *Service) {
-	proxy := httputil.NewSingleHostReverseProxy(url)
-	proxy.Transport = newServiceTransport(connectionTimeout)
-
-	defaultDirector := proxy.Director
-	proxy.Director = func(req *http.Request) {
-		defaultDirector(req)
-		req.Host = url.Host
-		req.URL.RawQuery = url.RawQuery
-	}
+	ctx := context.Background()
+	proxy := httprp.NewServer(ctx, url, connectionTimeout)
 
 	service := &Service{
 		Name:          name,
