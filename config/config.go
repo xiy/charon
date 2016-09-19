@@ -40,10 +40,5 @@ func (c *Config) Load(path string, logger *log.Logger) *Config {
 		log.Fatal(err)
 	}
 
-	var serviceCount = len(c.Services)
-	if serviceCount > 0 {
-		logger.Printf("info: found %d services.", serviceCount)
-	}
-
 	return c
 }
