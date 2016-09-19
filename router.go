@@ -2,11 +2,9 @@ package main
 
 import (
 	"charon/proxy"
-	"encoding/json"
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/husobee/vestigo"
@@ -50,19 +48,11 @@ func (r *Router) AddService(name, uri, prefix string) *proxy.Service {
 	service := proxy.NewService(name, prefix, serviceURL, r.ServiceTimeout)
 
 	// Create a path-prefix route in the muxer, handled by a
-	// reverse proxy handeler. This means any request to the
+	// reverse proxy handler. This means any request to the
 	// path-prefix of '/service/*' will result in it being proxied
 	// to the backend service as `/service/*`
 	r.Muxer.Handle(prefix, service.Handler)
 	r.Services[name] = service
 
 	return service
-}
-
-// GetServices returns the currently registered Services and their details
-func (r *Router) GetServices() {
-	for _, v := range r.Services {
-		enc := json.NewEncoder(os.Stdout)
-		enc.Encode(v)
-	}
 }
