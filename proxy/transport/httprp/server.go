@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -72,12 +73,31 @@ func newCustomReverseProxyHandler(baseURL *url.URL, connectionTimeout time.Durat
 
 	proxy.Transport = transport.NewServiceTransport(connectionTimeout)
 
-	defaultDirector := proxy.Director
+	targetQuery := baseURL.RawQuery
+
 	proxy.Director = func(req *http.Request) {
-		defaultDirector(req)
 		req.Host = baseURL.Host
-		req.URL.RawQuery = baseURL.RawQuery
+		req.URL.Scheme = baseURL.Scheme
+		req.URL.Host = baseURL.Host
+		req.URL.Path = singleJoiningSlash(baseURL.Path, req.URL.Path)
+		if targetQuery == "" || req.URL.RawQuery == "" {
+			req.URL.RawQuery = targetQuery + req.URL.RawQuery
+		} else {
+			req.URL.RawQuery = targetQuery + "&" + req.URL.RawQuery
+		}
 	}
 
 	return
+}
+
+func singleJoiningSlash(a, b string) string {
+	aslash := strings.HasSuffix(a, "/")
+	bslash := strings.HasPrefix(b, "/")
+	switch {
+	case aslash && bslash:
+		return a + b[1:]
+	case !aslash && !bslash:
+		return a + "/" + b
+	}
+	return a + b
 }
