@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -20,8 +21,8 @@ func NewStdoutLogger() (logger gokitlog.Logger) {
 }
 
 // NewCoLogLogger creates a new CoLog based logger
-func NewCoLogLogger() (logger *log.Logger) {
-	cl := colog.NewCoLog(os.Stdout, "charon ", log.LstdFlags|log.Lshortfile)
+func NewCoLogLogger(domain string) (logger *log.Logger) {
+	cl := colog.NewCoLog(os.Stdout, fmt.Sprintf("%s ", domain), log.LstdFlags|log.Lshortfile)
 
 	return cl.NewLogger()
 }

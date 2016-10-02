@@ -33,7 +33,7 @@ func NewRouter(serviceTimeout time.Duration, logger *log.Logger) (r *Router) {
 
 // ServeHTTP delegates calls to the underlying muxer of the Router instance.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	r.Logger.Printf("info: method=%s path=%s user_agent=%s", req.Method, req.URL.Path+req.URL.RawQuery, req.UserAgent())
+	r.Logger.Printf("info: [->] method=%s path=%s", req.Method, req.URL.Path+req.URL.RawQuery)
 	r.Muxer.ServeHTTP(w, req)
 }
 
@@ -42,7 +42,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func (r *Router) AddService(name, uri, prefix string) *proxy.Service {
 	serviceURL, err := url.Parse(uri)
 	if err != nil {
-		log.Fatalf("error: couldn't parse service addres for service `%s`", name)
+		r.Logger.Fatalf("error: couldn't parse service address for service `%s`", name)
 	}
 
 	service := proxy.NewService(name, prefix, serviceURL, r.ServiceTimeout)
