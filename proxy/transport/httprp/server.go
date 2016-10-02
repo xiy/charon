@@ -1,16 +1,13 @@
-// Package httrp is a modified version of the reverse proxy transport written
+// Package httprp is a modified version of the reverse proxy transport written
 // for the Go-Kit project: https://github.com/go-kit/kit/blob/master/transport/httprp/server.go
 //
 // This version has been modified to use a custom http.Transport object.
 package httprp
 
 import (
-	"charon/proxy/transport"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strings"
-	"time"
 
 	"golang.org/x/net/context"
 )
@@ -35,12 +32,12 @@ type Server struct {
 func NewServer(
 	ctx context.Context,
 	baseURL *url.URL,
-	connectionTimeout time.Duration,
+	handler *httputil.ReverseProxy,
 	options ...ServerOption,
 ) *Server {
 	s := &Server{
 		ctx:   ctx,
-		proxy: newCustomReverseProxyHandler(baseURL, connectionTimeout),
+		proxy: handler,
 	}
 	for _, option := range options {
 		option(s)
@@ -66,38 +63,4 @@ func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.proxy.ServeHTTP(w, r)
-}
-
-func newCustomReverseProxyHandler(baseURL *url.URL, connectionTimeout time.Duration) (proxy *httputil.ReverseProxy) {
-	proxy = httputil.NewSingleHostReverseProxy(baseURL)
-
-	proxy.Transport = transport.NewServiceTransport(connectionTimeout)
-
-	targetQuery := baseURL.RawQuery
-
-	proxy.Director = func(req *http.Request) {
-		req.Host = baseURL.Host
-		req.URL.Scheme = baseURL.Scheme
-		req.URL.Host = baseURL.Host
-		req.URL.Path = singleJoiningSlash(baseURL.Path, req.URL.Path)
-		if targetQuery == "" || req.URL.RawQuery == "" {
-			req.URL.RawQuery = targetQuery + req.URL.RawQuery
-		} else {
-			req.URL.RawQuery = targetQuery + "&" + req.URL.RawQuery
-		}
-	}
-
-	return
-}
-
-func singleJoiningSlash(a, b string) string {
-	aslash := strings.HasSuffix(a, "/")
-	bslash := strings.HasPrefix(b, "/")
-	switch {
-	case aslash && bslash:
-		return a + b[1:]
-	case !aslash && !bslash:
-		return a + "/" + b
-	}
-	return a + b
 }
