@@ -24,9 +24,7 @@ func NewServiceTransport(connectionTimeout time.Duration) (t *ServiceTransport) 
 	}
 
 	t.transport = &http.Transport{
-		DisableKeepAlives:     true,
 		MaxIdleConnsPerHost:   100000,
-		DisableCompression:    true,
 		ResponseHeaderTimeout: 30 * time.Second,
 		Dial: (&net.Dialer{
 			Timeout:   30 * time.Second,
