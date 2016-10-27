@@ -37,12 +37,16 @@ func NewServiceTransport(connectionTimeout time.Duration) (t *ServiceTransport) 
 
 // RoundTrip wraps the underlying transport.RoundTrip function, adding logging and custom headers.
 func (st *ServiceTransport) RoundTrip(req *http.Request) (resp *http.Response, err error) {
+	reqStart := time.Now()
+	st.logger.Printf("info: Proxying request: request=%s", req.URL)
 	resp, err = st.transport.RoundTrip(req)
 
-	log.Printf("info: %s", req.URL.Query().Encode())
-
-	if err == nil {
+	if err != nil {
+		st.logger.Printf("error: error during round trip request: %s (%v)", err, req)
+	} else {
+		st.logger.Printf("info: [<-] status=%s request_time=%v", resp.Status, time.Since(reqStart))
 		setViaHeader(req)
+		setUserAgentHeader(req)
 	}
 
 	return
