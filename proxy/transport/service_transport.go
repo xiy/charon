@@ -20,7 +20,7 @@ type ServiceTransport struct {
 // NewServiceTransport creates a new custom HTTP transport for use with an HTTP handler.
 func NewServiceTransport(connectionTimeout time.Duration) (t *ServiceTransport) {
 	t = &ServiceTransport{
-		logger: logging.NewCoLogLogger(),
+		logger: logging.NewCoLogLogger("charon"),
 	}
 
 	t.transport = &http.Transport{
